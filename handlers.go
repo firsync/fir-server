@@ -4,6 +4,7 @@ import (
 	"crypto/ed25519"
 	"database/sql"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"os/exec"
@@ -11,15 +12,18 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-func signupHandler(w http.ResponseWriter, r *http.Request, keys *ED25519Keys, db *sqlx.DB) {
-	clientPubKey, _ := hex.DecodeString(keys.publicKey)
-	signature := r.Header.Get("Signature")
-	signedKey, _ := hex.DecodeString(keys.signedKey)
-	if !ed25519.Verify(clientPubKey, signedKey, []byte(signature)) {
-		http.Error(w, "Invalid signature", http.StatusUnauthorized)
+func signupHandler(w http.ResponseWriter, r *http.Request, db *sqlx.DB) {
+	var jsonData map[string]string
+	err := json.NewDecoder(r.Body).Decode(&jsonData)
+	if err != nil {
+		http.Error(w, "Error decoding request body: "+err.Error(), http.StatusBadRequest)
 		return
 	}
-	if err := registerPublicKey(keys, db); err != nil {
+
+	publicKey := jsonData["public_key"]
+	signature := jsonData["signature"]
+
+	if err := registerPublicKey(publicKey, signature, db); err != nil {
 		http.Error(w, "Error registering public key: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -27,15 +31,17 @@ func signupHandler(w http.ResponseWriter, r *http.Request, keys *ED25519Keys, db
 	w.Write([]byte("Public key registered successfully"))
 }
 
-func registerPublicKey(keys *ED25519Keys, db *sqlx.DB) error {
+func registerPublicKey(publicKey string, signature string, db *sqlx.DB) error {
 	// Verify that the provided public key is valid
-	if !ed25519.Verify(ed25519.PublicKey([]byte(keys.publicKey)), []byte(keys.publicKey), []byte(keys.signedKey)) {
+	clientPubKey, _ := hex.DecodeString(publicKey)
+	signedKey, _ := hex.DecodeString(signature)
+	if !ed25519.Verify(clientPubKey, signedKey, []byte(signature)) {
 		return fmt.Errorf("provided public key is invalid")
 	}
 
 	// Check if the public key is already registered
 	var id int
-	err := db.Get(&id, "SELECT id FROM users WHERE public_key=$1", keys.publicKey)
+	err := db.Get(&id, "SELECT id FROM users WHERE public_key=$1", publicKey)
 	if err == nil {
 		return fmt.Errorf("public key already registered")
 	}
@@ -44,7 +50,7 @@ func registerPublicKey(keys *ED25519Keys, db *sqlx.DB) error {
 	}
 
 	// Call the combined script, passing in the public key and home directory as arguments
-	createUser := exec.Command("create_user.sh", keys.publicKey, "/home")
+	createUser := exec.Command("create_user.sh", publicKey, "/home")
 	createUser.Run()
 
 	return nil
