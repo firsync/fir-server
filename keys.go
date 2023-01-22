@@ -80,10 +80,10 @@ func initKeys() *ED25519Keys {
 	keysprivateKey := readFileKey(privKeyFilePath)
 	keyssignedKey := readFileKey(signedKeyFilePath)
 	keysselfCert := readFileKey(selfCertFilePath)
-	keys.publicKey = keyspublicKey[:64]
-	keys.privateKey = keysprivateKey[:64]
-	keys.signedKey = keyssignedKey[:64]
-	keys.selfCert = keysselfCert[:64]
+	keys.publicKey = keyspublicKey[:]
+	keys.privateKey = keysprivateKey[:]
+	keys.signedKey = keyssignedKey[:]
+	keys.selfCert = keysselfCert[:]
 	return &keys
 }
 
@@ -93,7 +93,7 @@ func generateKeys() *ED25519Keys {
 	if err != nil {
 		handle("error: ", err)
 	}
-	keys.privateKey = hex.EncodeToString(privKey[0:32])
+	keys.privateKey = hex.EncodeToString(privKey[:])
 	keys.publicKey = hex.EncodeToString(pubKey)
 	signedKey := ed25519.Sign(privKey, pubKey)
 	keys.signedKey = hex.EncodeToString(signedKey)
@@ -102,11 +102,11 @@ func generateKeys() *ED25519Keys {
 	createFileKey(privKeyFilePath)
 	createFileKey(signedKeyFilePath)
 	createFileKey(selfCertFilePath)
-	writeFileKey(pubKeyFilePath, keys.publicKey[:64])
-	writeFileKey(privKeyFilePath, keys.privateKey[:64])
+	writeFileKey(pubKeyFilePath, keys.publicKey[:])
+	writeFileKey(privKeyFilePath, keys.privateKey[:])
 	os.Chmod(privKeyFilePath, 0600)
-	writeFileKey(signedKeyFilePath, keys.signedKey[:64])
-	writeFileKey(selfCertFilePath, keys.selfCert[:64])
+	writeFileKey(signedKeyFilePath, keys.signedKey[:])
+	writeFileKey(selfCertFilePath, keys.selfCert[:])
 	return &keys
 }
 
