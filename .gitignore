@@ -1,2 +1,3 @@
 *.db
 fir-server
+.DS_Store

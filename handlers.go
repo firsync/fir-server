@@ -42,32 +42,10 @@ func registerPublicKey(keys *ED25519Keys, db *sqlx.DB) error {
 	if err != sql.ErrNoRows {
 		return fmt.Errorf("error checking for existing key: %v", err)
 	}
-	
-	// Create a new user with the public key as the username
-	user := keys.publicKey
-	useradd := exec.Command("useradd", user)
-	useradd.Run()
 
-	// Create a home directory for the new user
-	homeDir := "/home/" + user
-	mkdir := exec.Command("mkdir", homeDir)
-	mkdir.Run()
-
-	// Set ownership of the home directory to the new user
-	chown := exec.Command("chown", user+":"+user, homeDir)
-	chown.Run()
-
-	// Create an authorized_keys file for the new user
-	sshKeygen := exec.Command("ssh-keygen", "-f", homeDir+"/.ssh/authorized_keys", "-t", "ed25519", "-N", "")
-	sshKeygen.Run()
-
-	// Add the public key to the authorized_keys file
-	echo := exec.Command("echo", keys.publicKey, ">>", homeDir+"/.ssh/authorized_keys")
-	echo.Run()
-
-	// Set the correct permissions on the authorized_keys file
-	chmod := exec.Command("chmod", "600", homeDir+"/.ssh/authorized_keys")
-	chmod.Run()
+	// Call the combined script, passing in the public key and home directory as arguments
+	createUser := exec.Command("create_user.sh", keys.publicKey, "/home")
+	createUser.Run()
 
 	return nil
 }
