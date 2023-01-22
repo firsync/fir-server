@@ -1,58 +1,62 @@
 #!/usr/bin/env bash
 
-# set the repo URL
-repo="https://github.com/donuts-are-good/fir-server.git"
+export TZ=America/Chicago
 
-# set the project directory
-dir="$HOME/fir/fir-server"
+freshsincenow="`date +'%A, %B %d, %Y - %r'`"
+gitlogstatus="`cd ~/fir/fir-server/ && git log | head -n 5 | tail -n 1`"
+thislogo="
+   ____                    
+  / _(__________ _____ ____
+ / _/ / __(_-/ // / _ / __/
+/_//_/_/ /___\_, /_//_\__/ 
+            /___/          
 
-# set the binary name
-binary="fir-server"
+ \e[38;5;214mFir\e[38;5;208m Repository Monitor
+ \e[38;5;7m
+ \e[38;5;77mFresh since: \n\e[38;5;66m    "`date +'%A, %B %d, %Y - %r'`" \e[38;5;15m"
 
-# check if it already exists
-if [ ! -d "$dir" ]; then
+function thisthing {
+  cd ~/webapp
+  clear
+  echo -e "\e[38;5;202m$thislogo" 
+  echo -e "\n \e[38;5;77mTime now:\e[38;5;66m \n    "`date +'%A, %B %d, %Y - %r'`
+  sleep 1 
+}
 
-  # clone if it doesn't exist
-  git clone "$repo" "$dir"
 
-# end the loop
-fi
+function thatthing {
+  cd ~/webapp
+  clear
+  echo -e "\e[38;5;202m$thislogo" 
+  echo -e "\n \e[38;5;77mTime now:\e[38;5;66m \n    "`date +'%A, %B %d, %Y - %r'`
+  sleep 1 
+}
 
-# now that it should be there, enter the project directory
-cd "$dir"
 
-# check for changes
-while true; do
-  
-  # fetch changes
-  git fetch
+function theotherthing {
+  cd ~/webapp
+  clear
+  echo -e "\e[38;5;202m$thislogo" 
+  echo -e "\n \e[38;5;77mTime now:\e[38;5;66m \n    "`date +'%A, %B %d, %Y - %r'`
+  if [[ $(git pull|grep 'Already up to date.') ]]
+  then
+    echo ""
+  else 
+    echo -e "\e[38;5;41mUpdating..." 
+    killall fir-server
+    thislogo="
+   ____                    
+  / _(__________ _____ ____
+ / _/ / __(_-/ // / _ / __/
+/_//_/_/ /___\_, /_//_\__/ 
+            /___/          
 
-  # check for new changes
-  if git rev-parse HEAD..origin/master --quiet; then
-    
-    # pull them in
-    git pull
+ \e[38;5;214mFir\e[38;5;208m Repository Monitor
+ \e[38;5;7m
+ \e[38;5;77mFresh since: \n\e[38;5;66m    "`date +'%A, %B %d, %Y - %r'`" \e[38;5;15m"
+ cp ~/fir/fir-server/pull-forever.sh ~/pull-forever.sh
+fi 
+}
 
-    # check if any project files have been modified
-    if [ -n "$(git diff --name-only HEAD..HEAD@{1})" ]; then
 
-      # compile the new copy
-      go build 
-
-      # wait 2 seconds just in case
-      sleep 2
-
-      # kill the current running copy
-      pkill "$binary"
-      
-    # end the loop
-    fi
-
-  # end the loop
-  fi
-
-  # cycle time 10s
-  sleep 10
-
-# fin
-done
+while true ; do thisthing && thatthing && theotherthing ; done 
