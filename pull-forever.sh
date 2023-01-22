@@ -45,10 +45,14 @@ while true; do
       # kill the current running copy
       pkill "$binary"
       
+    # end the loop
     fi
+
+  # end the loop
   fi
 
   # cycle time 10s
   sleep 10
 
+# fin
 done
