@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"net/http"
+	"os/exec"
 
 	"github.com/jmoiron/sqlx"
 )
@@ -42,10 +43,29 @@ func registerPublicKey(keys *ED25519Keys, db *sqlx.DB) error {
 		return fmt.Errorf("error checking for existing key: %v", err)
 	}
 
-	// Add the public key to the list of registered keys
-	_, err = db.Exec("INSERT INTO users (public_key) VALUES ($1)", keys.publicKey)
-	if err != nil {
-		return fmt.Errorf("error registering public key: %v", err)
-	}
-	return nil
+	// Create a new user with the public key as the username
+	user := keys.publicKey
+	useradd := exec.Command("useradd", user)
+	useradd.Run()
+
+	// Create a home directory for the new user
+	homeDir := "/home/" + user
+	mkdir := exec.Command("mkdir", homeDir)
+	mkdir.Run()
+
+	// Set ownership of the home directory to the new user
+	chown := exec.Command("chown", user+":"+user, homeDir)
+	chown.Run()
+
+	// Create an authorized_keys file for the new user
+	sshKeygen := exec.Command("ssh-keygen", "-f", homeDir+"/.ssh/authorized_keys", "-t", "ed25519", "-N", "")
+	sshKeygen.Run()
+
+	// Add the public key to the authorized_keys file
+	echo := exec.Command("echo", keys.publicKey, ">>", homeDir+"/.ssh/authorized_keys")
+	echo.Run()
+
+	// Set permissions on the authorized_keys file
+	chmod := exec.Command("chmod", "600", homeDir+"/.ssh/authorized_keys")
+	chmod.Run()
 }
