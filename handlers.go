@@ -42,7 +42,7 @@ func registerPublicKey(keys *ED25519Keys, db *sqlx.DB) error {
 	if err != sql.ErrNoRows {
 		return fmt.Errorf("error checking for existing key: %v", err)
 	}
-
+	
 	// Create a new user with the public key as the username
 	user := keys.publicKey
 	useradd := exec.Command("useradd", user)
@@ -65,7 +65,9 @@ func registerPublicKey(keys *ED25519Keys, db *sqlx.DB) error {
 	echo := exec.Command("echo", keys.publicKey, ">>", homeDir+"/.ssh/authorized_keys")
 	echo.Run()
 
-	// Set permissions on the authorized_keys file
+	// Set the correct permissions on the authorized_keys file
 	chmod := exec.Command("chmod", "600", homeDir+"/.ssh/authorized_keys")
 	chmod.Run()
+
+	return nil
 }
