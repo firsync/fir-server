@@ -16,10 +16,10 @@ func api() {
 	}
 	defer db.Close()
 
-	keys := initKeys()
+	// keys := initKeys()
 
 	http.HandleFunc("/signup", func(w http.ResponseWriter, r *http.Request) {
-		signupHandler(w, r, keys, db)
+		signupHandler(w, r, db)
 	})
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")

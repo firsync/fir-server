@@ -1,3 +1,4 @@
 *.db
 fir-server
 .DS_Store
+*.code-workspace
